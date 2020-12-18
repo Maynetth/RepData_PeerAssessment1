@@ -1,0 +1,106 @@
+---
+title: "Sanskar Bista - Reproduce Research Course Project"
+author: "You"
+date: "12/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment Instructions
+1. Code for reading in the dataset and/or processing the data
+2. Histogram of the total number of steps taken each day
+3. Mean and median number of steps taken each day
+4. Time series plot of the average number of steps taken
+5. The 5-minute interval that, on average, contains the maximum number of steps
+6. Code to describe and show a strategy for imputing missing data
+7. Histogram of the total number of steps taken each day after missing values are imputed
+8. Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+9. All of the R code needed to reproduce the results (numbers, plots, etc.) in the report
+
+##Step 1
+##Code for reading the dataset
+```{r}
+activity <- read.csv("activity.csv")
+
+#Data exploration
+dim(activity)
+names(activity)
+head(activity)
+str(activity)
+```
+##Step 2
+##Histogram of the total number of steps taken each day
+```{r, echo=T}
+totalsteps <- aggregate(steps ~ date, activity, sum)
+
+
+hist(totalsteps$steps, main = "Total number of steps taken per day", xlab = "Total steps taken per day", ylab = "Number of days", col = "red")
+dev.copy(png, file = "Plot1.png", height = 480, width = 480)
+dev.off()
+```
+##Step 3
+## Mean and Median number of steps taken each day
+
+```{r, echo=T}
+raw_mean <- mean(totalsteps$steps)
+raw_median <- median(totalsteps$steps)
+```
+##Step 4
+##Time Series plot of the average nmber of steps taken
+```{r, echo=T}
+totalsteps <- aggregate(steps ~ interval, activity, mean)
+
+plot(totalsteps$interval, totalsteps$steps, type = "l", xlab = "Date", ylab = "Mean steps taken daily", main = "Mean Steps Taken Daily by Date")
+dev.copy(png, file = "plot2.png", height = 480, width = 480)
+dev.off()
+```
+##Step 5
+##Finding the 5-minute interval that, on average, contains the max amount of steps
+```{r, echo=T}
+totalsteps[which.max(totalsteps[,2]),1]
+```
+##Step 6
+##Code for describing and imputing data
+Optimal strategies to deal with imputing missing variables is mean/mode value substitution
+
+```{r, echo=T}
+missingValues <- is.na(activity[,1])
+
+m <- mean(totalsteps$steps)
+
+activity1 <- activity
+activity1[missingValues,1] <- m
+head(activity1)
+```
+##Step 7
+##Histogram of total number of steps taken after the missing values have been imputed
+```{r, echo=T}
+#plotting the new histogram
+TotalSteps <- aggregate(steps~date, activity1, sum)
+hist(TotalSteps$steps, xlab = "Total Number of Steps per day", ylab = "Number of days", main = "Number of steps taken daily (Missing values imputed)", col = "steelblue")
+dev.copy(png, file = "Plot3.png", height = 480, width = 480)
+dev.off()
+```
+##Step 8
+##Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r, echo=T}
+# creating the factors
+activity$date <- as.Date(strptime(activity$date, format="%Y-%m-%d"))
+activity$datetype <- sapply(activity$date, function(x) {
+  if (weekdays(x) == "Saturday" | weekdays(x) == "Sunday")
+  {y <- "Weekend"} else
+  {y <- "Weekday"}
+  y
+})
+
+#producing the panel plot
+library(ggplot2)
+ActbyDayT <- aggregate(steps~interval + datetype, activity, mean, na.rm = T)
+g <- ggplot(ActbyDayT, aes(x=interval, y = steps, color = datetype)) + geom_line() + labs(title = "Average daily steps by weekdays vs weekends", x = "Interval", y = "Average Number of Steps") + facet_wrap(~datetype, ncol = 1, nrow = 2)
+print(g)
+dev.copy(png, file = "plot4.png", height = 480, width = 480)
+dev.off()
+```
